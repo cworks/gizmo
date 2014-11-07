@@ -1,0 +1,33 @@
+description '${description}'
+
+apply plugin: "java"
+apply plugin: "maven"
+apply plugin: "idea"
+
+group = '${packageName}'
+version = '${version}'
+
+configurations {
+    providedRuntime
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+if (profile == 'prod') {
+    apply from: 'profile_prod.gradle'
+} else if(profile == 'qa') {
+    apply from: 'profile_qa.gradle'
+} else {
+    apply from: 'profile_dev.gradle'
+}
+
+dependencies {
+    testCompile("junit:junit:4.11")
+}
+
+task wrapper(type: Wrapper, description: 'Generates the gradle wrapper.') {
+    gradleVersion = '2.0'
+}

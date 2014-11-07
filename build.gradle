@@ -1,0 +1,22 @@
+description "automatic java tooling"
+
+apply plugin: "groovy"
+apply plugin: "maven"
+
+group="github-cworks"
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    compile localGroovy()
+    compile("net-cworks:json:1.1")
+    compile("commons-io:commons-io:2.4")
+    testCompile("junit:junit:4.11")
+}
+
+task wrapper(type: Wrapper, description: "Generates the gradle wrapper.") {
+    gradleVersion = "2.1"
+}
