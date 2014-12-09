@@ -15,7 +15,11 @@ class GizmoPluginTest {
     @Test
     void apply() {
 
+        def map = [name : "Bucky", age : 4 ];
+        map.put("color", "Sandy Brown");
     }
+
+
 
 }
 

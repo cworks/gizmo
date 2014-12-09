@@ -17,6 +17,28 @@ dependencies {
     testCompile("junit:junit:4.11")
 }
 
+jar {
+    from {
+        configurations.runtime.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+
+    manifest {
+        attributes 'Main-Class': 'github.cworks.gizmo.Gizmo'
+    }
+}
+
+task gizZip(type: Zip, dependsOn: jar) {
+    from('build/libs') {
+        into('libs')
+    }
+    from('build/resources/main/templates') {
+        into('templates')
+    }
+    from('build/resources/gizmo')
+}
+
 task wrapper(type: Wrapper, description: "Generates the gradle wrapper.") {
     gradleVersion = "2.1"
 }

@@ -18,47 +18,64 @@ class GradlizeTask extends GizmoTask {
      */
     private JavaProjectTask project;
 
+    /**
+     * Render gradle assets into a project that's rooted at a location
+     * specified by project.root()
+     */
     @Override
     void gizIt() {
 
-        // Gizmo has a baked template engine and will render gradle assets into the project
-        // thats rooted at project.root()
-        Gizmo.render(gizmo.getTemplateFolder() + "build.gradle.giz",
+        // create gradle wrapper directory
+        new File(project.root(), "gradle/wrapper").mkdirs();
+
+        Gizmo.renderFromClasspath("/templates/build.gradle",
             project.root() + "/build.gradle",
             [
-                    description: gizmo.context().getString("description"),
-                    version: gizmo.context().getString("version"),
-                    packageName: gizmo.context().getString("packageName")
+                description: gizmo.context().getString("description"),
+                version: gizmo.context().getString("version"),
+                packageName: gizmo.context().getString("packageName")
             ]
         );
-        Gizmo.render(gizmo.getTemplateFolder() + "gradle.properties.giz",
+
+        Gizmo.renderFromClasspath("/templates/gradle.properties",
             project.root() + "/gradle.properties",
             [
-                    projectName: gizmo.context().getString("name"),
-                    javaVersion: gizmo.context().getString("javaVersion", "8")
+                projectName: gizmo.context().getString("name"),
+                javaVersion: gizmo.context().getString("javaVersion", "8")
             ]
         );
-        Gizmo.render(gizmo.getTemplateFolder() + "settings.gradle.giz",
+
+        Gizmo.copyFileFromClasspath("/templates/settings.gradle",
             project.root() + "/settings.gradle"
         );
-        Gizmo.render(gizmo.getTemplateFolder() + "profile_dev.gradle.giz",
+
+        Gizmo.copyFileFromClasspath("/templates/profile_dev.gradle",
             project.root() + "/profile_dev.gradle"
         );
-        Gizmo.render(gizmo.getTemplateFolder() + "profile_prod.gradle.giz",
+
+        Gizmo.copyFileFromClasspath("/templates/profile_prod.gradle",
             project.root() + "/profile_prod.gradle"
         );
-        Gizmo.render(gizmo.getTemplateFolder() + "profile_qa.gradle.giz",
+
+        Gizmo.copyFileFromClasspath("/templates/profile_qa.gradle",
             project.root() + "/profile_qa.gradle"
         );
-        Gizmo.copyFile(gizmo.getTemplateFolder() + "gradlew.giz",
+
+        Gizmo.copyFileFromClasspath("/templates/gradlew",
             project.root() + "/gradlew"
         );
-        Gizmo.copyFile(gizmo.getTemplateFolder() + "gradlew.bat.giz",
+
+        Gizmo.copyFileFromClasspath("/templates/gradlew.bat",
             project.root() + "/gradlew.bat"
         );
-        Gizmo.copyDirectory(gizmo.getTemplateFolder() + "gradle",
-             project.root() + "/gradle")
 
+        Gizmo.copyFileFromClasspath("/templates/gradle/wrapper/gradle-wrapper.jar",
+            gradleWrapper("gradle-wrapper.jar")
+        );
+
+        Gizmo.copyFileFromClasspath("/templates/gradle/wrapper/gradle-wrapper.properties",
+            gradleWrapper("gradle-wrapper.properties")
+        );
     }
 
     /**
@@ -69,5 +86,16 @@ class GradlizeTask extends GizmoTask {
     GradlizeTask(final Gizmo gizmo, final JavaProjectTask project) {
         super(gizmo);
         this.project = project;
+    }
+
+    def String gradleWrapper(asset) {
+        return this.project.root() + "/gradle/wrapper/" + asset;
+    }
+
+    def String projectTest(testFile) {
+        return this.projectPath.getPath() +
+            "/src/test/java/" +
+                gizmo.context().getString("packageName").replaceAll("\\.", "/") +
+                    "/" + testFile;
     }
 }

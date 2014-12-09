@@ -19,17 +19,17 @@ class JavaProjectTask extends GizmoTask {
     /**
      * Parent project path: /some/parent/path
      */
-    private File parentPath;
+    def File parentPath;
 
     /**
      * Project name: a simple name
      */
-    private String projectName;
+    def String projectName;
 
     /**
      * Project path: /some/parent/path/projectName
      */
-    private File projectPath;
+    def File projectPath;
 
     /**
      * Create a JavaProjectTask from a parentPath and projectName
@@ -44,7 +44,7 @@ class JavaProjectTask extends GizmoTask {
         this.projectPath = new File(this.parentPath, this.projectName);
     }
 
-    String root() {
+    def String root() {
         return this.projectPath.getPath();
     }
 
@@ -52,7 +52,7 @@ class JavaProjectTask extends GizmoTask {
      * When this is called all the magic happens
      */
     @Override
-    void gizIt() {
+    def void gizIt() {
         createDirectories()
         createPackage()
         createFiles()
@@ -61,7 +61,7 @@ class JavaProjectTask extends GizmoTask {
     /**
      * Create directories
      */
-    void createDirectories() {
+    def void createDirectories() {
         // create core directories
         new File(this.projectPath, "src/main").mkdirs();
         new File(this.projectPath, "src/main/java").mkdirs();
@@ -73,7 +73,7 @@ class JavaProjectTask extends GizmoTask {
     /**
      * Create user specified java package
      */
-    void createPackage() {
+    def void createPackage() {
         if(gizmo.context().getString("packageName") != null) {
             new File(this.projectPath, "src/main/java/"
                 + gizmo.context().getString("packageName").replaceAll("\\.", "/")).mkdirs();
@@ -83,24 +83,47 @@ class JavaProjectTask extends GizmoTask {
     }
 
     /**
-     * Render core files that a basic Java project should happen
+     * Render core java project files to a location specified
+     * by user on gizmo command line.
      */
-    void createFiles() {
+    def void createFiles() {
 
-        Gizmo.render(gizmo.getTemplateFolder() + "README.md.giz",
-            this.projectPath.getPath() + "/README.md",
-            [
-                projectName: gizmo.context().getString("name"),
-            ]
+        Gizmo.renderFromClasspath("/templates/src/main/java/App.java",
+            projectSrc("App.java"),
+            [packageName: gizmo.context().getString("packageName")]
         );
 
-        Gizmo.copyFile(gizmo.getTemplateFolder() + ".gitignore.giz",
+        Gizmo.renderFromClasspath("/templates/src/test/java/TestApp.java",
+            projectTest("TestApp.java"),
+            [packageName: gizmo.context().getString("packageName")]
+        );
+
+        Gizmo.renderFromClasspath("/templates/README.md",
+            this.projectPath.getPath() + "/README.md",
+            [projectName: gizmo.context().getString("name"),]
+        );
+
+        Gizmo.copyFileFromClasspath("/templates/gitignore",
             this.projectPath.getPath() + "/.gitignore"
         );
 
-        Gizmo.copyFile(gizmo.getTemplateFolder() + ".gitattributes.giz",
+        Gizmo.copyFileFromClasspath("/templates/gitattributes",
             this.projectPath.getPath() + "/.gitattributes"
         );
+    }
+
+    def String projectSrc(sourceFile) {
+        return this.projectPath.getPath() +
+            "/src/main/java/" +
+                gizmo.context().getString("packageName").replaceAll("\\.", "/") +
+                    "/" + sourceFile;
+    }
+
+    def String projectTest(testFile) {
+        return this.projectPath.getPath() +
+            "/src/test/java/" +
+                gizmo.context().getString("packageName").replaceAll("\\.", "/") +
+                    "/" + testFile;
     }
 
 }

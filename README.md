@@ -1,5 +1,10 @@
-A wittle ole Java project template
+Hello Gizmo
 ==================================
+
+Gizmo is a simple tool to help automate common Java development tasks
+---------------------------------------------------------------------
+
+
 Put something important here
 
 Gradle 2.0 is used and Java 1.7

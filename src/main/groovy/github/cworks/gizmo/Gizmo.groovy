@@ -8,7 +8,6 @@ package github.cworks.gizmo
 import github.cworks.gizmo.tasks.GizmoProject
 import groovy.text.GStringTemplateEngine
 import net.cworks.json.JsonObject
-import org.apache.commons.io.FileUtils
 
 class Gizmo {
 
@@ -20,12 +19,12 @@ class Gizmo {
     /**
      * Gizmo home directory
      */
-    private File gizmoHome = null;
+    def File gizmoHome = null;
 
     /**
      * Holds variables and such needed by Gizmo tasks
      */
-    private JsonObject context = null;
+    def JsonObject context = null;
 
     /**
      * You got to start it up...with a gizmo home directory as one and only argument
@@ -60,12 +59,23 @@ class Gizmo {
         return gizmo;
     }
 
-    static void copyFile(String source, String target) {
-        FileUtils.copyFile(new File(source), new File(target));
-    }
+    static copyFileFromClasspath(String source, String target) {
+        BufferedReader reader = Gizmo.class.getResource(source).newReader();
+        if(!reader) {
+            throw new RuntimeException("Woopsie could not find template from classpath: $source");
+        }
 
-    static void copyDirectory(String source, String target) {
-        FileUtils.copyDirectory(new File(source), new File(target));
+        BufferedWriter writer = new BufferedWriter(new FileWriter(target));
+        if(!writer) {
+            throw new RuntimeException("Woopsie could not create writer for: $target");
+        }
+
+        reader.eachLine { line ->
+            writer.writeLine(line);
+        };
+
+        writer.close();
+        reader.close();
     }
 
     /**
@@ -75,7 +85,7 @@ class Gizmo {
      * @param defaultValue
      * @return
      */
-    static String prompt(String message, String defaultValue = null) {
+    static prompt(String message, String defaultValue = null) {
 
         return readLine(message, defaultValue);
     }
@@ -88,7 +98,7 @@ class Gizmo {
      * @param target
      * @param arguments
      */
-    static String render(String template, String target, Map args = [:]) {
+    static render(String template, String target, Map args = [:]) {
 
         File templateFile = new File(template);
 
@@ -103,9 +113,26 @@ class Gizmo {
         FileWriter fw = new FileWriter(target);
         fw.write(rendered);
         fw.close();
+        reader.close();
     }
 
-    private static readLine(String message, String defaultValue = null) {
+    static renderFromClasspath(String template, String target, Map args = [:]) {
+
+        BufferedReader reader = Gizmo.class.getResource(template).newReader();
+        if(!reader) {
+            throw new RuntimeException("Woopsie could not find template from classpath: $template");
+        }
+
+        String rendered = new GStringTemplateEngine()
+            .createTemplate(reader)?.make(args)?.toString();
+
+        FileWriter fw = new FileWriter(target);
+        fw.write(rendered);
+        fw.close();
+        reader.close();
+    }
+
+    static readLine(String message, String defaultValue = null) {
         String gizmoMessage = "$gizmoPrompt $message " + (defaultValue ? "[$defaultValue] " : "")
         println("$gizmoMessage (waiting...)")
         return System.in.newReader().readLine() ?: defaultValue
@@ -114,7 +141,7 @@ class Gizmo {
     /**
      * go() is the top-level function call that kicks everything off
      */
-    void go() {
+    def go() {
 
         String name = Gizmo.prompt("Project Name: ",
             GizmoProject.defaultProjectName());
@@ -142,15 +169,15 @@ class Gizmo {
 
     }
 
-    String getGizmoHome() {
+    def getGizmoHome() {
         return this.gizmoHome.getPath();
     }
 
-    String getTemplateFolder() {
+    def getTemplateFolder() {
         return getGizmoHome() + "/templates/";
     }
 
-    JsonObject context() {
+    def context() {
         return this.context;
     }
 }
