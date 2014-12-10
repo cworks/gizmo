@@ -1,10 +1,5 @@
-/**
- * Created with love by corbett.
- * User: corbett
- * Date: 11/7/14
- * Time: 8:33 AM
- */
 package github.cworks.gizmo
+
 import github.cworks.gizmo.tasks.GizmoProject
 import groovy.text.GStringTemplateEngine
 import net.cworks.json.JsonObject
@@ -24,7 +19,7 @@ class Gizmo {
     /**
      * Terminal for prompting and processing commands
      */
-    def Terminal terminal = new Terminal("(oo)", "Welcome to Gizmo", "Sinaria boss");;
+    def Terminal terminal = new Terminal("(gizmo)", "Welcome to Gizmo", "Sinaria boss");;
 
     /**
      * You got to start it up...with a gizmo home directory as one and only argument
@@ -62,19 +57,10 @@ class Gizmo {
         return gizmo;
     }
 
-    static printHelp(List<String> output) {
-        output.add("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
-        output.add("| g-i-z-m-o                          baked with wuv by cworks |");
-        output.add("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
-        output.add("| -help                 | this menu                           |");
-        output.add("| -quit                 | bye-bye                             |");
-        output.add("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
-    }
-
     static copyFileFromClasspath(String source, String target) {
         BufferedReader reader = Gizmo.class.getResource(source).newReader();
         if(!reader) {
-            throw new RuntimeException("Woopsie could not find template from classpath: $source");
+            throw new RuntimeException("Woopsie could not read file from classpath: $source");
         }
 
         BufferedWriter writer = new BufferedWriter(new FileWriter(target));
@@ -88,6 +74,34 @@ class Gizmo {
 
         writer.close();
         reader.close();
+    }
+
+    static copyBinaryFileFromClasspath(String source, String target) {
+        InputStream input = Gizmo.class.getResource(source).newInputStream();
+        if(!input) {
+            throw new RuntimeException("Woopsie could not obtain input stream classpath: $source");
+        }
+
+        OutputStream output = new BufferedOutputStream(new FileOutputStream(target));
+        if(!output) {
+            throw new RuntimeException("Woopsie could not write file for: $target");
+        }
+
+        def byteCount = 0;
+        try {
+            def buffer = new byte[4096];
+            def bytesRead = -1;
+            while ((bytesRead = input.read(buffer)) != -1) {
+                output.write(buffer, 0, bytesRead);
+                byteCount += bytesRead;
+            }
+            output.flush();
+        } finally {
+            try { input?.close(); } catch (Exception ex) { }
+            try { output?.close(); } catch (IOException ex) { }
+        }
+
+        return byteCount;
     }
 
     /**
@@ -135,7 +149,7 @@ class Gizmo {
     /**
      * wizard() is the top-level function call that kicks everything off
      */
-    def wizard(Closure closure) {
+    def wizard() {
 
         String name = terminal.prompt("Project Name: ",
             GizmoProject.defaultProjectName());

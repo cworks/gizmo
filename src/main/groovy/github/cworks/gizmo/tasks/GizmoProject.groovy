@@ -54,8 +54,9 @@ class GizmoProject {
         projectTask.gizIt();
 
         if(gizmo.context().getString("buildTool").equals("gradle")) {
-            GizmoTask gradlizeTask = new GradlizeTask(gizmo, projectTask);
-            gradlizeTask.gizIt();
+            new GradlizeTask(gizmo, projectTask).gizIt();
+        } else if(gizmo.context().getString("buildTool").equals("maven")) {
+            new MavenizeTask(gizmo, projectTask).gizIt();
         }
     }
 }

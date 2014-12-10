@@ -4,9 +4,6 @@ apply plugin: "java"
 apply plugin: "maven"
 apply plugin: "idea"
 
-group = '${packageName}'
-version = '${version}'
-
 configurations {
     providedRuntime
 }
@@ -14,6 +11,9 @@ configurations {
 repositories {
     mavenLocal()
     mavenCentral()
+    maven {
+        url "http://dl.bintray.com/cworks/maven"
+    }
 }
 
 if (profile == 'prod') {
