@@ -12,11 +12,6 @@ import net.cworks.json.JsonObject
 class Gizmo {
 
     /**
-     * A way cool input prompt for gizmo
-     */
-    static final String gizmoPrompt = "(oo) "
-
-    /**
      * Gizmo home directory
      */
     def File gizmoHome = null;
@@ -27,13 +22,21 @@ class Gizmo {
     def JsonObject context = null;
 
     /**
+     * Terminal for prompting and processing commands
+     */
+    def Terminal terminal = new Terminal("(oo)", "Welcome to Gizmo", "Sinaria boss");;
+
+    /**
      * You got to start it up...with a gizmo home directory as one and only argument
      * @param args
      */
     public static void main(String[] args) {
+        Gizmo gizmo = new Gizmo();
+        gizmo.wizard();
+    }
 
-        Gizmo gizmo = Gizmo.newGizmo(args[0]);
-        gizmo.go();
+    private Gizmo() {
+        this.context = new JsonObject();
     }
 
     /**
@@ -59,6 +62,15 @@ class Gizmo {
         return gizmo;
     }
 
+    static printHelp(List<String> output) {
+        output.add("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+        output.add("| g-i-z-m-o                          baked with wuv by cworks |");
+        output.add("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+        output.add("| -help                 | this menu                           |");
+        output.add("| -quit                 | bye-bye                             |");
+        output.add("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+    }
+
     static copyFileFromClasspath(String source, String target) {
         BufferedReader reader = Gizmo.class.getResource(source).newReader();
         if(!reader) {
@@ -76,18 +88,6 @@ class Gizmo {
 
         writer.close();
         reader.close();
-    }
-
-    /**
-     * Prompt for some information specified by message argument and return
-     * users input as a String.
-     * @param message
-     * @param defaultValue
-     * @return
-     */
-    static prompt(String message, String defaultValue = null) {
-
-        return readLine(message, defaultValue);
     }
 
     /**
@@ -132,28 +132,22 @@ class Gizmo {
         reader.close();
     }
 
-    static readLine(String message, String defaultValue = null) {
-        String gizmoMessage = "$gizmoPrompt $message " + (defaultValue ? "[$defaultValue] " : "")
-        println("$gizmoMessage (waiting...)")
-        return System.in.newReader().readLine() ?: defaultValue
-    }
-
     /**
-     * go() is the top-level function call that kicks everything off
+     * wizard() is the top-level function call that kicks everything off
      */
-    def go() {
+    def wizard(Closure closure) {
 
-        String name = Gizmo.prompt("Project Name: ",
+        String name = terminal.prompt("Project Name: ",
             GizmoProject.defaultProjectName());
-        String path = Gizmo.prompt("Project Path: ",
+        String path = terminal.prompt("Project Path: ",
             GizmoProject.defaultProjectPath());
-        String description = Gizmo.prompt("Project Description: ",
+        String description = terminal.prompt("Project Description: ",
             GizmoProject.defaultProjectDescription());
-        String version = Gizmo.prompt("Project Version: ",
+        String version = terminal.prompt("Project Version: ",
             GizmoProject.defaultProjectVersion());
-        String packageName = Gizmo.prompt("Top Package: ",
+        String packageName = terminal.prompt("Top Package: ",
             GizmoProject.defaultPackage());
-        String buildTool = Gizmo.prompt("Gradle or Maven: ",
+        String buildTool = terminal.prompt("Gradle or Maven: ",
             GizmoProject.defaultBuildTool());
 
         this.context().setString("name", name)
@@ -163,7 +157,7 @@ class Gizmo {
             .setString("packageName", packageName)
             .setString("buildTool", buildTool);
 
-        println(this.context().asString())
+        terminal.log(this.context().asString())
 
         GizmoProject.newProject(this).create();
 
