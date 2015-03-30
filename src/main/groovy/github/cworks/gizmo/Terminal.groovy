@@ -2,14 +2,16 @@ package github.cworks.gizmo
 
 class Terminal {
 
-    def String prompt;
-    def String helloMessage;
-    def String byeMessage;
-
+    final def String prompt;
+    final def String helloMessage;
+    final def String byeMessage;
+    final def GizmoTerminalWriter output;
+    
     public Terminal(prompt, helloMessage, byeMessage) {
         this.prompt = prompt + " ";
         this.helloMessage = helloMessage;
         this.byeMessage = byeMessage;
+        this.output = new GizmoTerminalWriter(System.out);
     }
 
     def start(Closure interpreter) {
@@ -17,7 +19,6 @@ class Terminal {
         def quit = false;
         def BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         try {
-            final List<String> output = new ArrayList<>();
             println(helloMessage);
             while(!quit) {
                 print(prompt);

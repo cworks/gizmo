@@ -48,6 +48,8 @@ class Gizmo {
                     printHelp(output);
                 } else if("-wizard".equalsIgnoreCase(line)){
                     gizmo.wizard(terminal, output);
+                } else if("-codeheader".equalsIgnoreCase(line)) {
+                    //gizmo.loadTask("github.cworks.gizmo.tasks.CodeHeaderTask", terminal, output);
                 }
             } catch(Exception ex) {
                 output.add(ex.getMessage());
