@@ -37,11 +37,10 @@ class GizmoProject {
     }
 
     static String defaultPackage() {
-        return "github.cworks.app";
+        return "cworks.app";
     }
 
     static GizmoProject newProject(Gizmo gizmo) {
-
         return new GizmoProject(gizmo);
     }
 

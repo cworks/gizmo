@@ -1,11 +1,26 @@
 package github.cworks.gizmo
 
+import cworks.json.JsonObject
+import cworks.json.Json;
 import github.cworks.gizmo.tasks.GizmoProject
+import github.cworks.gizmo.tasks.GradlizeTask
 import groovy.text.GStringTemplateEngine
-import net.cworks.json.JsonObject
 
 class Gizmo {
 
+    /**
+     * Class utility to print the help menu
+     */
+    def static void printHelp(List<String> output) {
+        output.add("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+        output.add("| g-i-z-m-o version 1.0.0                                     |");
+        output.add("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+        output.add("| -help                 | this menu                           |");
+        output.add("| -quit                 | bye-bye                             |");
+        output.add("| -wizard               | new project wizard                  |");
+        output.add("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+    }
+    
     /**
      * Gizmo home directory
      */
@@ -15,19 +30,29 @@ class Gizmo {
      * Holds variables and such needed by Gizmo tasks
      */
     def JsonObject context = null;
-
-    /**
-     * Terminal for prompting and processing commands
-     */
-    def Terminal terminal = new Terminal("(gizmo)", "Welcome to Gizmo", "Sinaria boss");;
-
+    
     /**
      * You got to start it up...with a gizmo home directory as one and only argument
      * @param args
      */
     public static void main(String[] args) {
-        Gizmo gizmo = new Gizmo();
-        gizmo.wizard();
+        
+        final Gizmo gizmo = new Gizmo();
+        final Terminal terminal = new Terminal("(gizmo)", "Welcome, -help for menu", "Sinaria");
+        terminal.start { line, output ->
+            try {
+                line = line.trim();
+                if ("-quit".equalsIgnoreCase(line)) {
+                    return true; // true means stop
+                } else if("-help".equalsIgnoreCase(line)) {
+                    printHelp(output);
+                } else if("-wizard".equalsIgnoreCase(line)){
+                    gizmo.wizard(terminal, output);
+                }
+            } catch(Exception ex) {
+                output.add(ex.getMessage());
+            }
+        };
     }
 
     private Gizmo() {
@@ -149,7 +174,7 @@ class Gizmo {
     /**
      * wizard() is the top-level function call that kicks everything off
      */
-    def wizard() {
+    def wizard(Terminal terminal, List<String> output) {
 
         String name = terminal.prompt("Project Name: ",
             GizmoProject.defaultProjectName());
@@ -163,15 +188,21 @@ class Gizmo {
             GizmoProject.defaultPackage());
         String buildTool = terminal.prompt("Gradle or Maven: ",
             GizmoProject.defaultBuildTool());
+        if("gradle".equalsIgnoreCase(buildTool)) {
+            String buildToolVersion = terminal.prompt("Gradle Version: ",
+                GradlizeTask.DEFAULT_GRADLE_VERSION);
+            context().setString("buildToolVersion", buildToolVersion);
+            context().setString("gradleVersion", buildToolVersion);
+        }
 
-        this.context().setString("name", name)
+        context().setString("name", name)
             .setString("path", path)
             .setString("description", description)
             .setString("version", version)
             .setString("packageName", packageName)
             .setString("buildTool", buildTool);
 
-        terminal.log(this.context().asString())
+        output.add(Json.asPrettyJson(context()));
 
         GizmoProject.newProject(this).create();
 

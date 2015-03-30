@@ -1,17 +1,30 @@
 package github.cworks.gizmo.tasks
-
 import github.cworks.gizmo.Gizmo
-
 /**
  * Do gradle stuff
  */
 class GradlizeTask extends GizmoTask {
 
     /**
+     * Hardwired gradle default version 
+     */
+    public static final String DEFAULT_GRADLE_VERSION = "2.3"
+
+    /**
      * Gradlize this GizmoProject
      */
     private JavaProjectTask project;
-
+    
+    /**
+     * Create us one of them thar GizmoTasks
+     * @param gizmo
+     * @param project
+     */
+    GradlizeTask(final Gizmo gizmo, final JavaProjectTask project) {
+        super(gizmo);
+        this.project = project;
+    }
+    
     /**
      * Render gradle assets into a project that's rooted at a location
      * specified by project.root()
@@ -25,7 +38,8 @@ class GradlizeTask extends GizmoTask {
         Gizmo.renderFromClasspath("/templates/gradle/build.gradle",
             project.root() + "/build.gradle",
             [
-                description: gizmo.context().getString("description")
+                description: gizmo.context().getString("description"),
+                gradleVersion: gizmo.context().getString("gradleVersion")
             ]
         );
 
@@ -43,18 +57,6 @@ class GradlizeTask extends GizmoTask {
             project.root() + "/settings.gradle"
         );
 
-        Gizmo.copyFileFromClasspath("/templates/gradle/profile_dev.gradle",
-            project.root() + "/profile_dev.gradle"
-        );
-
-        Gizmo.copyFileFromClasspath("/templates/gradle/profile_prod.gradle",
-            project.root() + "/profile_prod.gradle"
-        );
-
-        Gizmo.copyFileFromClasspath("/templates/gradle/profile_qa.gradle",
-            project.root() + "/profile_qa.gradle"
-        );
-
         Gizmo.copyFileFromClasspath("/templates/gradle/gradlew",
             project.root() + "/gradlew"
         );
@@ -67,23 +69,18 @@ class GradlizeTask extends GizmoTask {
             gradleWrapper("gradle-wrapper.jar")
         );
 
-        Gizmo.copyFileFromClasspath("/templates/gradle/wrapper/gradle-wrapper.properties",
-            gradleWrapper("gradle-wrapper.properties")
+        Gizmo.renderFromClasspath("/templates/gradle/wrapper/gradle-wrapper.properties",
+            gradleWrapper("gradle-wrapper.properties"),
+            [
+               gradleVersion: gizmo.context().getString("gradleVersion")
+            ]
         );
-    }
 
-    /**
-     * Create us one of them thar GizmoTasks
-     * @param gizmo
-     * @param project
-     */
-    GradlizeTask(final Gizmo gizmo, final JavaProjectTask project) {
-        super(gizmo);
-        this.project = project;
+        new File(project.root(), "gradlew").setExecutable(true, true);
+        new File(project.root(), "gradlew.bat").setExecutable(true, true);
     }
-
+    
     def String gradleWrapper(asset) {
         return this.project.root() + "/gradle/wrapper/" + asset;
     }
-
 }

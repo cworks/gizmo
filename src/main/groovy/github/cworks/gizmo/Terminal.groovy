@@ -17,13 +17,18 @@ class Terminal {
         def quit = false;
         def BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         try {
-            Terminal.println(helloMessage);
+            final List<String> output = new ArrayList<>();
+            println(helloMessage);
             while(!quit) {
-                Terminal.print(prompt);
+                print(prompt);
                 def line = reader.readLine().trim();
-                quit = interpreter(line.replaceFirst(prompt, ""));
+                quit = interpreter(
+                    line.replaceFirst(prompt, ""),
+                    output);
+                print(output);
+                output.clear();
             }
-            Terminal.println(byeMessage);
+            println(byeMessage);
 
         } catch (IOException ex) {
             System.err.println(ex);
@@ -57,6 +62,11 @@ class Terminal {
         String line = "$prompt $message";
         print("$line ");
     }
+    
+    def printLine(String message) {
+        String line = "$prompt $message";
+        println("$line ");
+    }
 
     /**
      * print line and flush
@@ -81,7 +91,9 @@ class Terminal {
      * @param output
      */
     def static print(List<String> output) {
-        output.forEach({line -> println(line)});
+        output.forEach({
+            line -> println(line)
+        });
     }
 
 }

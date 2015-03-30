@@ -13,7 +13,7 @@ repositories {
 
 dependencies {
     compile localGroovy()
-    compile("net-cworks:json:1.1")
+    compile("cworks:json:1.4")
     testCompile("junit:junit:4.11")
 }
 

@@ -16,18 +16,10 @@ repositories {
     }
 }
 
-if (profile == 'prod') {
-    apply from: 'profile_prod.gradle'
-} else if(profile == 'qa') {
-    apply from: 'profile_qa.gradle'
-} else {
-    apply from: 'profile_dev.gradle'
-}
-
 dependencies {
-    testCompile("junit:junit:4.11")
+    testCompile("junit:junit:4.12")
 }
 
 task wrapper(type: Wrapper, description: 'Generates the gradle wrapper.') {
-    gradleVersion = '2.0'
+    gradleVersion = '${gradleVersion}'
 }
