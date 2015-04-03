@@ -1,5 +1,6 @@
 package github.cworks.gizmo.tasks
 
+import cworks.json.JsonObject
 import github.cworks.gizmo.Gizmo
 
 class MavenizeTask extends GizmoTask {
@@ -8,26 +9,24 @@ class MavenizeTask extends GizmoTask {
 
     /**
      * Create us one of them thar GizmoTasks
-     * @param gizmo
+     * @param context
      * @param project
      */
-    MavenizeTask(final Gizmo gizmo, final JavaProjectTask project) {
-        super(gizmo);
+    MavenizeTask(final JsonObject context, final JavaProjectTask project) {
+        super(context);
         this.project = project;
     }
 
     @Override
     void gizIt() {
-
         Gizmo.renderFromClasspath("/templates/maven/pom.xml",
             project.root() + "/pom.xml",
             [
-                projectName: gizmo.context().getString("name"),
-                javaVersion: gizmo.context().getString("javaVersion", "8"),
-                version: gizmo.context().getString("version"),
-                packageName: gizmo.context().getString("packageName")
+                projectName: context.getString("name"),
+                javaVersion: context.getString("javaVersion", "8"),
+                version: context.getString("version"),
+                packageName: context.getString("packageName")
             ]
         );
-
     }
 }

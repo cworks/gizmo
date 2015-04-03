@@ -5,15 +5,14 @@
  * Time: 8:37 AM
  */
 package github.cworks.gizmo.tasks
-
-import github.cworks.gizmo.Gizmo
+import cworks.json.JsonObject
 
 class GizmoProject {
 
-    private Gizmo gizmo;
+    private JsonObject context;
 
-    private GizmoProject(Gizmo gizmo) {
-        this.gizmo = gizmo;
+    private GizmoProject(JsonObject context) {
+        this.context = context;
     }
 
     static String defaultProjectName() {
@@ -40,8 +39,8 @@ class GizmoProject {
         return "cworks.app";
     }
 
-    static GizmoProject newProject(Gizmo gizmo) {
-        return new GizmoProject(gizmo);
+    static GizmoProject newProject(JsonObject context) {
+        return new GizmoProject(context);
     }
 
     /**
@@ -49,13 +48,13 @@ class GizmoProject {
      */
     void create() {
 
-        GizmoTask projectTask = new JavaProjectTask(gizmo);
+        GizmoTask projectTask = new JavaProjectTask(context);
         projectTask.gizIt();
 
-        if(gizmo.context().getString("buildTool").equals("gradle")) {
-            new GradlizeTask(gizmo, projectTask).gizIt();
-        } else if(gizmo.context().getString("buildTool").equals("maven")) {
-            new MavenizeTask(gizmo, projectTask).gizIt();
+        if(context.getString("buildTool").equals("gradle")) {
+            new GradlizeTask(context, projectTask).gizIt();
+        } else if(context.getString("buildTool").equals("maven")) {
+            new MavenizeTask(context, projectTask).gizIt();
         }
     }
 }

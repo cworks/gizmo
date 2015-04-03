@@ -1,26 +1,25 @@
 package github.cworks.gizmo
 
+import cworks.json.Json
 import cworks.json.JsonObject
-import cworks.json.Json;
+import github.cworks.gizmo.tasks.CodeHeaderTask
 import github.cworks.gizmo.tasks.GizmoProject
 import github.cworks.gizmo.tasks.GradlizeTask
 import groovy.text.GStringTemplateEngine
 
 class Gizmo {
 
-    /**
-     * Class utility to print the help menu
-     */
-    def static void printHelp(List<String> output) {
-        output.add("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
-        output.add("| g-i-z-m-o version 1.0.0                                     |");
-        output.add("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
-        output.add("| -help                 | this menu                           |");
-        output.add("| -quit                 | bye-bye                             |");
-        output.add("| -wizard               | new project wizard                  |");
-        output.add("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
-    }
-    
+    def static printHelp = { ShellInput input, ShellOutput output ->
+        output.println("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+        output.println("| g-i-z-m-o version 1.0.0                                     |");
+        output.println("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+        output.println("| -help                 | this menu                           |");
+        output.println("| -quit                 | bye-bye                             |");
+        output.println("| -wizard               | new project wizard                  |");
+        output.println("| -codeheader           | apply code header to sources        |");
+        output.println("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+    };
+
     /**
      * Gizmo home directory
      */
@@ -30,31 +29,50 @@ class Gizmo {
      * Holds variables and such needed by Gizmo tasks
      */
     def JsonObject context = null;
-    
+
     /**
-     * You got to start it up...with a gizmo home directory as one and only argument
+     * You got to start it up...with a context home directory as one and only argument
      * @param args
      */
     public static void main(String[] args) {
-        
+
         final Gizmo gizmo = new Gizmo();
-        final Terminal terminal = new Terminal("(gizmo)", "Welcome, -help for menu", "Sinaria");
-        terminal.start { line, output ->
-            try {
-                line = line.trim();
-                if ("-quit".equalsIgnoreCase(line)) {
-                    return true; // true means stop
-                } else if("-help".equalsIgnoreCase(line)) {
-                    printHelp(output);
-                } else if("-wizard".equalsIgnoreCase(line)){
-                    gizmo.wizard(terminal, output);
-                } else if("-codeheader".equalsIgnoreCase(line)) {
-                    //gizmo.loadTask("github.cworks.gizmo.tasks.CodeHeaderTask", terminal, output);
-                }
-            } catch(Exception ex) {
-                output.add(ex.getMessage());
-            }
-        };
+
+        final Shell shell = new Shell("(gizmo)", "Welcome, -help for menu", "Sinaria");
+        shell.splash(printHelp)
+            .quit("-quit", { ShellOutput output ->
+                    output.println("-quit command closure called.");
+                })
+            .help("-help", printHelp)
+            .command("-test", { ShellInput input, ShellOutput output ->
+                    output.println("-test command closure called.")
+                })
+            .command("-wizard", { ShellInput input, ShellOutput output ->
+                    gizmo.wizard(input, output);
+                })
+            .command("-codeheader", { ShellInput input, ShellOutput output ->
+                    output.println("-codeheader command closure called.")
+                })
+            .errorHandler({ Exception ex ->
+                    ex.printStackTrace();
+                })
+            .start();
+
+//        shell.quit("-quit").start { line, output ->
+//            try {
+//                if ("-quit".equalsIgnoreCase(line)) {
+//                    return true; // true means stop
+//                } else if("-help".equalsIgnoreCase(line)) {
+//                    printHelp(output);
+//                } else if("-wizard".equalsIgnoreCase(line)){
+//                    context.wizard(shell, output);
+//                } else if("-codeheader".equalsIgnoreCase(line)) {
+//                    context.codeHeader(shell, output);
+//                }
+//            } catch(Exception ex) {
+//                output.add(ex.getMessage());
+//            }
+//        };
     }
 
     private Gizmo() {
@@ -62,7 +80,7 @@ class Gizmo {
     }
 
     /**
-     * Private creation, needs a gizmo home directory
+     * Private creation, needs a context home directory
      * @param gizmoHome
      */
     private Gizmo(File gizmoHome) {
@@ -149,7 +167,7 @@ class Gizmo {
         }
 
         String rendered = new GStringTemplateEngine()
-            .createTemplate(reader)?.make(args)?.toString();
+                .createTemplate(reader)?.make(args)?.toString();
 
         FileWriter fw = new FileWriter(target);
         fw.write(rendered);
@@ -165,7 +183,7 @@ class Gizmo {
         }
 
         String rendered = new GStringTemplateEngine()
-            .createTemplate(reader)?.make(args)?.toString();
+                .createTemplate(reader)?.make(args)?.toString();
 
         FileWriter fw = new FileWriter(target);
         fw.write(rendered);
@@ -174,40 +192,64 @@ class Gizmo {
     }
 
     /**
-     * wizard() is the top-level function call that kicks everything off
+     * Run the new project wizard
+     * @param terminal
+     * @param output
+     * @return
      */
-    def wizard(Terminal terminal, List<String> output) {
+    def wizard(ShellInput input, ShellOutput output) {
 
-        String name = terminal.prompt("Project Name: ",
-            GizmoProject.defaultProjectName());
-        String path = terminal.prompt("Project Path: ",
-            GizmoProject.defaultProjectPath());
-        String description = terminal.prompt("Project Description: ",
-            GizmoProject.defaultProjectDescription());
-        String version = terminal.prompt("Project Version: ",
-            GizmoProject.defaultProjectVersion());
-        String packageName = terminal.prompt("Top Package: ",
-            GizmoProject.defaultPackage());
-        String buildTool = terminal.prompt("Gradle or Maven: ",
-            GizmoProject.defaultBuildTool());
+        String name = input.prompt("Project Name: ",
+                GizmoProject.defaultProjectName());
+        String path = input.prompt("Project Path: ",
+                GizmoProject.defaultProjectPath());
+        String description = input.prompt("Project Description: ",
+                GizmoProject.defaultProjectDescription());
+        String version = input.prompt("Project Version: ",
+                GizmoProject.defaultProjectVersion());
+        String packageName = input.prompt("Top Package: ",
+                GizmoProject.defaultPackage());
+        String buildTool = input.prompt("Gradle or Maven: ",
+                GizmoProject.defaultBuildTool());
         if("gradle".equalsIgnoreCase(buildTool)) {
-            String buildToolVersion = terminal.prompt("Gradle Version: ",
-                GradlizeTask.DEFAULT_GRADLE_VERSION);
+            String buildToolVersion = input.prompt("Gradle Version: ",
+                    GradlizeTask.DEFAULT_GRADLE_VERSION);
             context().setString("buildToolVersion", buildToolVersion);
             context().setString("gradleVersion", buildToolVersion);
         }
 
         context().setString("name", name)
-            .setString("path", path)
-            .setString("description", description)
-            .setString("version", version)
-            .setString("packageName", packageName)
-            .setString("buildTool", buildTool);
+                .setString("path", path)
+                .setString("description", description)
+                .setString("version", version)
+                .setString("packageName", packageName)
+                .setString("buildTool", buildTool);
+
+        output.println(Json.asPrettyJson(context()));
+
+        GizmoProject.newProject(getContext()).create();
+    }
+
+    /**
+     * Run and apply the code header to all source files specified
+     * @param terminal
+     * @param output
+     */
+    def codeHeader(Shell terminal, List<String> output) {
+
+        String sourcePath = terminal.prompt("Project source path: ",
+            "typically this is /some/path/project/src")
+        context().setString("codeHeader.sourcePath", sourcePath);
+        output.add("-quit");
+        
+        String headerTemplate = terminal.prompt("Source Code Header: ",
+            CodeHeaderTask.defaultCodeHeader());
+        
+        context().setString("codeHeader.headerTemplate", headerTemplate);
 
         output.add(Json.asPrettyJson(context()));
 
-        GizmoProject.newProject(this).create();
-
+        new CodeHeaderTask(getContext()).gizIt();
     }
 
     def getGizmoHome() {

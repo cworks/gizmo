@@ -5,15 +5,14 @@
  * Time: 1:53 PM
  */
 package github.cworks.gizmo.tasks
-
-import github.cworks.gizmo.Gizmo
+import cworks.json.JsonObject
 
 abstract class GizmoTask {
 
-    protected Gizmo gizmo;
+    protected JsonObject context;
 
-    GizmoTask(final Gizmo gizmo) {
-        this.gizmo = gizmo;
+    GizmoTask(final JsonObject context) {
+        this.context = context;
     }
 
     /**

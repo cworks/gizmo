@@ -1,5 +1,8 @@
 package github.cworks.gizmo.tasks
+
+import cworks.json.JsonObject
 import github.cworks.gizmo.Gizmo
+
 /**
  * Do gradle stuff
  */
@@ -17,11 +20,11 @@ class GradlizeTask extends GizmoTask {
     
     /**
      * Create us one of them thar GizmoTasks
-     * @param gizmo
+     * @param context
      * @param project
      */
-    GradlizeTask(final Gizmo gizmo, final JavaProjectTask project) {
-        super(gizmo);
+    GradlizeTask(final JsonObject context, final JavaProjectTask project) {
+        super(context);
         this.project = project;
     }
     
@@ -38,18 +41,18 @@ class GradlizeTask extends GizmoTask {
         Gizmo.renderFromClasspath("/templates/gradle/build.gradle",
             project.root() + "/build.gradle",
             [
-                description: gizmo.context().getString("description"),
-                gradleVersion: gizmo.context().getString("gradleVersion")
+                description: context.getString("description"),
+                gradleVersion: context.getString("gradleVersion")
             ]
         );
 
         Gizmo.renderFromClasspath("/templates/gradle/gradle.properties",
             project.root() + "/gradle.properties",
             [
-                projectName: gizmo.context().getString("name"),
-                javaVersion: gizmo.context().getString("javaVersion", "8"),
-                version: gizmo.context().getString("version"),
-                packageName: gizmo.context().getString("packageName")
+                projectName: context.getString("name"),
+                javaVersion: context.getString("javaVersion", "8"),
+                version: context.getString("version"),
+                packageName: context.getString("packageName")
             ]
         );
 
@@ -72,7 +75,7 @@ class GradlizeTask extends GizmoTask {
         Gizmo.renderFromClasspath("/templates/gradle/wrapper/gradle-wrapper.properties",
             gradleWrapper("gradle-wrapper.properties"),
             [
-               gradleVersion: gizmo.context().getString("gradleVersion")
+               gradleVersion: context.getString("gradleVersion")
             ]
         );
 
