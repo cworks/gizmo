@@ -1,6 +1,6 @@
 package github.cworks.gizmo.tasks
-
 import cworks.json.JsonObject
+import github.cworks.gizmo.Gizmo
 
 class CodeHeaderTask extends GizmoTask {
 
@@ -37,6 +37,14 @@ class CodeHeaderTask extends GizmoTask {
     }
 
     /**
+     * Return the pre-backed default source folder
+     * @return
+     */
+    static String defaultSourceFolder() {
+        return "src"
+    }
+
+    /**
      * Check that we can read the custom header file or user is willing to accept default
      */
     def void checkCodeHeader() {
@@ -59,9 +67,11 @@ class CodeHeaderTask extends GizmoTask {
             new File(sourcePath, 'header.log').withWriterAppend { writer ->
                 writer << "Starting CodeHeaderTask: " + new Date().toString() + "\n";
             }
+            new File(sourcePath, 'header.log').delete();
         } catch (Exception ex) {
             throw new RuntimeException("CodeHeaderTask create header.log failed.", ex);
         }
+
     }
 
     /**
@@ -86,17 +96,35 @@ class CodeHeaderTask extends GizmoTask {
         //     close both files
         //     if(cleanup) then remove temp java file (i.e. the original file)
 
-        String headerContent = headerFile.getText('UTF-8');
-        def filterJavaFiles = ~/.*\.java$/
-        def totalFileSize = 0;
-        def fileCount = 0;
-        def sumFileSize = {
-            totalFileSize += it.size();
-            fileCount++;
+        String headerTemplate = "";
+
+        if(defaultCodeHeader().equals(headerFile.getPath())) {
+            headerTemplate = Gizmo.readFileFromClasspath("/templates/codeheader/Header.java");
+        } else {
+            headerTemplate = headerFile.getText('UTF-8');
         }
 
-        sourcePath.traverse(type: FILES, visit: sumFileSize, nameFilter: filterJavaFiles);
+        def args = [projectName: context.getString("codeHeader.projectName"),
+                    user: context.getString("codeHeader.user"),
+                    tags: context.getString("codeHeader.tags"),
+                    organization: context.getString("codeHeader.organization"),
+                    license: context.getString("codeHeader.license"),
+                    body: context.getString("codeHeader.body"),
+                    tagLine: context.getString("codeHeader.tagLine")];
+        sourcePath.eachDirRecurse() { dir ->
+            dir.eachFileMatch(~/.*\.java$/) { file ->
+                // bind template variables to headerTemplate
+                // then prepend header to source file
+                // then replace source file
+                //
+                args.put("dateTime", new Date().format("MM-dd-yyyy HH:mm:ss"));
+                args.put("packageName", Gizmo.toPackageName(file));
+                String renderedHeader = Gizmo.render(headerTemplate, args);
+                String content = file.getText("UTF-8");
+                file.write(renderedHeader + content, "UTF-8");
+            }
+        }
 
-        println("Total file size for $fileCount Java source files is: $totalFileSize");
     }
+    
 }

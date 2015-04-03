@@ -44,35 +44,16 @@ class Gizmo {
                     output.println("-quit command closure called.");
                 })
             .help("-help", printHelp)
-            .command("-test", { ShellInput input, ShellOutput output ->
-                    output.println("-test command closure called.")
-                })
             .command("-wizard", { ShellInput input, ShellOutput output ->
                     gizmo.wizard(input, output);
                 })
             .command("-codeheader", { ShellInput input, ShellOutput output ->
-                    output.println("-codeheader command closure called.")
+                    gizmo.codeHeader(input, output);
                 })
             .errorHandler({ Exception ex ->
                     ex.printStackTrace();
                 })
             .start();
-
-//        shell.quit("-quit").start { line, output ->
-//            try {
-//                if ("-quit".equalsIgnoreCase(line)) {
-//                    return true; // true means stop
-//                } else if("-help".equalsIgnoreCase(line)) {
-//                    printHelp(output);
-//                } else if("-wizard".equalsIgnoreCase(line)){
-//                    context.wizard(shell, output);
-//                } else if("-codeheader".equalsIgnoreCase(line)) {
-//                    context.codeHeader(shell, output);
-//                }
-//            } catch(Exception ex) {
-//                output.add(ex.getMessage());
-//            }
-//        };
     }
 
     private Gizmo() {
@@ -100,6 +81,19 @@ class Gizmo {
         }
         Gizmo gizmo = new Gizmo(dir);
         return gizmo;
+    }
+    
+    static String toPackageName(File javaFile) {
+        return javaFile.getPath().replaceAll(File.separator, ".");
+    }
+    
+    static String readFileFromClasspath(String source) {
+        BufferedReader reader = Gizmo.class.getResource(source).newReader();
+        if(!reader) {
+            throw new RuntimeException("Woopsie could not read file from classpath: $source");
+        }
+
+        return reader.getText();
     }
 
     static copyFileFromClasspath(String source, String target) {
@@ -149,6 +143,18 @@ class Gizmo {
         return byteCount;
     }
 
+    /**
+     * Return a rendered String from the given template and args.
+     * @param template
+     * @param args
+     * @return
+     */
+    static String render(String template, Map args = [:]) {
+        String rendered = new GStringTemplateEngine()
+            .createTemplate(template).make(args).toString();
+        return rendered;
+    }
+    
     /**
      * Render a template to the target and use data in arguments map to
      * resolve variable.
@@ -232,22 +238,22 @@ class Gizmo {
 
     /**
      * Run and apply the code header to all source files specified
-     * @param terminal
+     * @param input
      * @param output
      */
-    def codeHeader(Shell terminal, List<String> output) {
+    def codeHeader(ShellInput input, ShellOutput output) {
 
-        String sourcePath = terminal.prompt("Project source path: ",
-            "typically this is /some/path/project/src")
-        context().setString("codeHeader.sourcePath", sourcePath);
-        output.add("-quit");
-        
-        String headerTemplate = terminal.prompt("Source Code Header: ",
-            CodeHeaderTask.defaultCodeHeader());
-        
-        context().setString("codeHeader.headerTemplate", headerTemplate);
+        context().setString("codeHeader.sourcePath",
+            input.prompt("Project source folder: ", CodeHeaderTask.defaultSourceFolder()));
 
-        output.add(Json.asPrettyJson(context()));
+        context().setString("codeHeader.headerFile",
+            input.prompt("Source Code Header: ", CodeHeaderTask.defaultCodeHeader()));
+        
+        // TODO try to read project name from sourcePath
+        context().setString("codeHeader.projectName",
+                input.prompt("Project Name: ", "My Project"));
+        
+        output.println(Json.asPrettyJson(context()));
 
         new CodeHeaderTask(getContext()).gizIt();
     }
