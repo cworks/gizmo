@@ -251,7 +251,25 @@ class Gizmo {
         
         // TODO try to read project name from sourcePath
         context().setString("codeHeader.projectName",
-                input.prompt("Project Name: ", "My Project"));
+            input.prompt("Project Name: ", CodeHeaderTask.defaultProjectName()));
+        
+        context().setString("codeHeader.organization",
+            input.prompt("Organization: ", CodeHeaderTask.defaultProjectOrganization()));
+
+        context().setString("codeHeader.user",
+            input.prompt("User: ", System.getProperty("user.name")));
+        
+        context().setString("codeHeader.license",
+            input.prompt("License: ", CodeHeaderTask.defaultLicense()));
+
+        context().setString("codeHeader.tagLine",
+            input.prompt("Tag Line: ", CodeHeaderTask.defaultTagLine()));
+
+        context().setString("codeHeader.body",
+            input.prompt("Body: ", CodeHeaderTask.defaultBody()));
+        
+        context().setString("codeHeader.tags",
+            input.prompt("Tags: ", CodeHeaderTask.defaultTags()));
         
         output.println(Json.asPrettyJson(context()));
 

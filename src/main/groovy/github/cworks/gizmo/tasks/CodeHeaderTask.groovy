@@ -45,6 +45,54 @@ class CodeHeaderTask extends GizmoTask {
     }
 
     /**
+     * Return a default Project name 
+     * @return
+     */
+    static String defaultProjectName() {
+        return "My Project"
+    }
+
+    /**
+     * Return a default Organization name
+     * @return
+     */
+    static String defaultProjectOrganization() {
+        return "My Organization"
+    }
+
+    /**
+     * Return a default License 
+     * @return
+     */
+    static String defaultLicense() {
+        return "None"
+    }
+
+    /**
+     * Return a default Tag Line
+     * @return
+     */
+    static String defaultTagLine() {
+        return "Dream and Do"
+    }
+
+    /**
+     * Return a default code header Body
+     * @return
+     */
+    static String defaultBody() {
+        return "None"
+    }
+
+    /**
+     * Return default tags
+     * @return
+     */
+    static String defaultTags() {
+        return "None"
+    }
+
+    /**
      * Check that we can read the custom header file or user is willing to accept default
      */
     def void checkCodeHeader() {
