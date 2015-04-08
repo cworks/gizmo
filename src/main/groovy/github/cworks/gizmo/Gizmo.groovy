@@ -1,11 +1,13 @@
 package github.cworks.gizmo
-
 import cworks.json.Json
 import cworks.json.JsonObject
+import github.cworks.gizmo.os.OSType
 import github.cworks.gizmo.tasks.CodeHeaderTask
 import github.cworks.gizmo.tasks.GizmoProject
 import github.cworks.gizmo.tasks.GradlizeTask
 import groovy.text.GStringTemplateEngine
+
+import static github.cworks.gizmo.os.OSType.isWin
 
 class Gizmo {
 
@@ -82,9 +84,21 @@ class Gizmo {
         Gizmo gizmo = new Gizmo(dir);
         return gizmo;
     }
-    
+
+    /**
+     * Return the package of a java source file
+     * @param javaFile
+     * @return
+     */
     static String toPackageName(File javaFile) {
-        return javaFile.getPath().replaceAll(File.separator, ".");
+        String packageName;
+        if(isWin()) {
+            packageName = javaFile.getParentFile().getPath().replace("\\", ".");
+        } else {
+            packageName = javaFile.getParentFile().getPath().replace("/", ".");
+        }
+        
+        return packageName.split("(src.)(.*)(.java.)")[1];
     }
     
     static String readFileFromClasspath(String source) {
@@ -195,6 +209,10 @@ class Gizmo {
         fw.write(rendered);
         fw.close();
         reader.close();
+    }
+    
+    static OSType os() {
+
     }
 
     /**

@@ -4,6 +4,8 @@ import github.cworks.gizmo.Gizmo
 
 class CodeHeaderTask extends GizmoTask {
 
+    def final static String NONE = "NONE";
+    
     /**
      * Project path, typically: /some/path/project/src
      */
@@ -33,7 +35,7 @@ class CodeHeaderTask extends GizmoTask {
      * @return
      */
     static String defaultCodeHeader() {
-        return "Header.java"
+        return "Header.txt"
     }
 
     /**
@@ -49,7 +51,7 @@ class CodeHeaderTask extends GizmoTask {
      * @return
      */
     static String defaultProjectName() {
-        return "My Project"
+        return NONE;
     }
 
     /**
@@ -57,7 +59,7 @@ class CodeHeaderTask extends GizmoTask {
      * @return
      */
     static String defaultProjectOrganization() {
-        return "My Organization"
+        return NONE;
     }
 
     /**
@@ -65,7 +67,7 @@ class CodeHeaderTask extends GizmoTask {
      * @return
      */
     static String defaultLicense() {
-        return "None"
+        return NONE;
     }
 
     /**
@@ -73,7 +75,7 @@ class CodeHeaderTask extends GizmoTask {
      * @return
      */
     static String defaultTagLine() {
-        return "Dream and Do"
+        return NONE;
     }
 
     /**
@@ -81,7 +83,7 @@ class CodeHeaderTask extends GizmoTask {
      * @return
      */
     static String defaultBody() {
-        return "None"
+        return NONE;
     }
 
     /**
@@ -89,7 +91,45 @@ class CodeHeaderTask extends GizmoTask {
      * @return
      */
     static String defaultTags() {
-        return "None"
+        return NONE;
+    }
+
+    /**
+     * Return true if sourceText already contains a header 
+     * @param sourceText
+     * @return
+     */
+    static boolean hasHeader(String sourceText) {
+        String text = sourceText.trim();
+        if(text.startsWith("/**")) {
+            for(def i = 0; i < text.length(); i++) {
+                if(i + 1 < text.length()) {
+                    if (text.charAt(i) == '*' && text.charAt(i + 1) == '/') {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Return sourceText without a code header
+     * @param sourceText
+     * @return
+     */
+    static String removeHeader(String sourceText) {
+        String text = sourceText.trim();
+        if(text.startsWith("/**")) {
+            for(def i = 0; i < text.length(); i++) {
+                if(i + 1 < text.length()) {
+                    if (text.charAt(i) == '*' && text.charAt(i + 1) == '/') {
+                        return text.substring(i + 2);
+                    }
+                }
+            }
+        }
+        return text;
     }
 
     /**
@@ -135,41 +175,52 @@ class CodeHeaderTask extends GizmoTask {
      * source file under sourcePath.
      */
     def void applyCodeHeader() {
-
-        // Read header file into a String
-        // Traverse the sourcePath and each time we hit a java file,
-        //     Concatenate the header with the java file
-        //     Move the original java file to a temp file (just in case we brick)
-        //     Rename the new java (that contains the header) to the original java filename
-        //     close both files
-        //     if(cleanup) then remove temp java file (i.e. the original file)
-
+        
         String headerTemplate = "";
 
         if(defaultCodeHeader().equals(headerFile.getPath())) {
-            headerTemplate = Gizmo.readFileFromClasspath("/templates/codeheader/Header.java");
+            headerTemplate = Gizmo.readFileFromClasspath("/templates/codeheader/Header.txt");
         } else {
             headerTemplate = headerFile.getText('UTF-8');
         }
 
-        def args = [projectName: context.getString("codeHeader.projectName"),
-                    user: context.getString("codeHeader.user"),
-                    tags: context.getString("codeHeader.tags"),
-                    organization: context.getString("codeHeader.organization"),
-                    license: context.getString("codeHeader.license"),
-                    body: context.getString("codeHeader.body"),
-                    tagLine: context.getString("codeHeader.tagLine")];
+        def args = [user: context.getString("codeHeader.user")];
+        
+        if(!defaultProjectName().equals(context.getString("codeHeader.projectName"))) {
+            args.put("projectName", context.getString("codeHeader.projectName"));
+        }
+        
+        if(!defaultTags().equals(context.getString("codeHeader.tags"))) {
+            args.put("tags", context.getString("codeHeader.tags"));
+        }
+        
+        if(!defaultProjectOrganization().equals(context.getString("codeHeader.organization"))) {
+            args.put("organization", context.getString("codeHeader.organization"));
+        }
+        
+        if(!defaultLicense().equals(context.getString("codeHeader.license"))) {
+            args.put("license", context.getString("codeHeader.license"));
+        }
+        
+        if(!defaultBody().equals(context.getString("codeHeader.body"))) {
+            args.put("body", context.getString("codeHeader.body"));
+        }
+        
+        if(defaultTagLine().equals(context.getString("codeHeader.tagLine"))) {
+            args.put("tagLine", context.getString("codeHeader.tagLine"));
+        }
+        
         sourcePath.eachDirRecurse() { dir ->
             dir.eachFileMatch(~/.*\.java$/) { file ->
-                // bind template variables to headerTemplate
-                // then prepend header to source file
-                // then replace source file
-                //
                 args.put("dateTime", new Date().format("MM-dd-yyyy HH:mm:ss"));
                 args.put("packageName", Gizmo.toPackageName(file));
                 String renderedHeader = Gizmo.render(headerTemplate, args);
                 String content = file.getText("UTF-8");
-                file.write(renderedHeader + content, "UTF-8");
+                if(hasHeader(content)) {
+                    content = removeHeader(content);
+                }
+                
+                file.write(renderedHeader + content.trim(), "UTF-8");
             }
         }
 
