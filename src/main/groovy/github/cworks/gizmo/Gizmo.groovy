@@ -102,12 +102,16 @@ class Gizmo {
     }
     
     static String readFileFromClasspath(String source) {
+        return readerFromClasspath(source).getText();
+    }
+    
+    static Reader readerFromClasspath(String source) {
         BufferedReader reader = Gizmo.class.getResource(source).newReader();
         if(!reader) {
             throw new RuntimeException("Woopsie could not read file from classpath: $source");
         }
 
-        return reader.getText();
+        return reader;
     }
 
     static copyFileFromClasspath(String source, String target) {
@@ -260,38 +264,8 @@ class Gizmo {
      * @param output
      */
     def codeHeader(ShellInput input, ShellOutput output) {
-
-        context().setString("codeHeader.sourcePath",
-            input.prompt("Project source folder: ", CodeHeaderTask.defaultSourceFolder()));
-
-        context().setString("codeHeader.headerFile",
-            input.prompt("Source Code Header: ", CodeHeaderTask.defaultCodeHeader()));
         
-        // TODO try to read project name from sourcePath
-        context().setString("codeHeader.projectName",
-            input.prompt("Project Name: ", CodeHeaderTask.defaultProjectName()));
-        
-        context().setString("codeHeader.organization",
-            input.prompt("Organization: ", CodeHeaderTask.defaultProjectOrganization()));
-
-        context().setString("codeHeader.user",
-            input.prompt("User: ", System.getProperty("user.name")));
-        
-        context().setString("codeHeader.license",
-            input.prompt("License: ", CodeHeaderTask.defaultLicense()));
-
-        context().setString("codeHeader.tagLine",
-            input.prompt("Tag Line: ", CodeHeaderTask.defaultTagLine()));
-
-        context().setString("codeHeader.body",
-            input.prompt("Body: ", CodeHeaderTask.defaultBody()));
-        
-        context().setString("codeHeader.tags",
-            input.prompt("Tags: ", CodeHeaderTask.defaultTags()));
-        
-        output.println(Json.asPrettyJson(context()));
-
-        new CodeHeaderTask(getContext()).gizIt();
+        new CodeHeaderTask(getContext(), input, output).gizIt();
     }
 
     def getGizmoHome() {

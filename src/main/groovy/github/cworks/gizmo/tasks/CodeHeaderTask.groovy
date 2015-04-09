@@ -1,33 +1,69 @@
 package github.cworks.gizmo.tasks
+
 import cworks.json.JsonObject
 import github.cworks.gizmo.Gizmo
+import github.cworks.gizmo.ShellInput
+import github.cworks.gizmo.ShellOutput
+
+import java.nio.file.Paths
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 class CodeHeaderTask extends GizmoTask {
 
-    def final static String NONE = "NONE";
-    
     /**
-     * Project path, typically: /some/path/project/src
+     * None option
      */
-    def File sourcePath;
+    def final static String NONE = "NONE";
 
     /**
-     * The code header template file we're going to apply to each file under sourcePath
+     * pattern string for matching basic java expressions (i.e. ${something}) 
+     */
+    def final static String TEMPLATE_VARIABLE_PATTERN = "\\\$\\{(.*?)\\}";
+
+    /**
+     * Pattern used to parse java expressions 
+     */
+    def final static Pattern VARIABLE_PATTERN = Pattern.compile(TEMPLATE_VARIABLE_PATTERN);
+    
+    /**
+     * Project source folder, typically: /some/path/project/src
+     */
+    def File sourceFolder;
+
+    /**
+     * The code header template file we're going to apply to each file under sourceFolder
      */
     def File headerFile;
 
-    CodeHeaderTask(final JsonObject context) {
-        super(context);
-        this.headerFile = new File(context.getString("codeHeader.headerFile"))
-        this.sourcePath = new File(context.getString("codeHeader.sourcePath"));
+    CodeHeaderTask(final JsonObject context, final ShellInput input, final ShellOutput output) {
+        super(context, input, output);
     }
 
     @Override
     void gizIt() {
-        checkCodeHeader();
-        checkSourcePath();
-        checkScratchSpace();
-        applyCodeHeader();
+
+        context.setString("sourceFolder",
+            input.prompt("sourceFolder: ", defaultSourceFolder()));
+
+        context.setString("headerFile",
+            input.prompt("headerFile: ", defaultCodeHeader()));
+
+        this.headerFile = new File(context.getString("headerFile"))
+        this.sourceFolder = new File(context.getString("sourceFolder"));
+
+        try {
+            checkSourcePath();
+        } catch(Exception ex) {
+            output.println("Whoopsie! " + ex.getMessage());
+            return;
+        }
+        
+        try {
+            applyCodeHeader();
+        } catch(Exception ex) {
+            output.println("Whoopsie! " + ex.getMessage());
+        }
     }
 
     /**
@@ -52,6 +88,18 @@ class CodeHeaderTask extends GizmoTask {
      */
     static String defaultProjectName() {
         return NONE;
+    }
+
+    /**
+     * Return a best guess on the default Project name by using the 
+     * given sourceFolder.  Will typically return the folder that contains
+     * sourceFolder as the projectName
+     *
+     * @param sourcePath
+     * @return
+     */
+    static String defaultProjectName(String sourcePath) {
+        return Paths.get(sourcePath).getParent().getName(0);
     }
 
     /**
@@ -132,11 +180,12 @@ class CodeHeaderTask extends GizmoTask {
         return text;
     }
 
-    /**
-     * Check that we can read the custom header file or user is willing to accept default
-     */
-    def void checkCodeHeader() {
-
+    static void parseVariable(String expression, List<String> variables) {
+        Matcher matcher = VARIABLE_PATTERN.matcher(expression);
+        while (matcher.find()) {
+            String key = matcher.group(1);
+            variables.add(key);
+        }
     }
 
     /**
@@ -145,76 +194,65 @@ class CodeHeaderTask extends GizmoTask {
      */
     def void checkSourcePath() {
 
-        if(!sourcePath.exists()) {
-            throw new RuntimeException("CodeHeaderTask requires a valid sourcePath!");
+        if(!sourceFolder.exists()) {
+            throw new RuntimeException("sourceFolder [" + sourceFolder.getPath() + "] does not exist.");
         }
 
         // try to write into a temp file inside the folder,
         // this will tell us if we have write permissions
         try {
-            new File(sourcePath, 'header.log').withWriterAppend { writer ->
+            new File(sourceFolder, 'header.log').withWriterAppend { writer ->
                 writer << "Starting CodeHeaderTask: " + new Date().toString() + "\n";
             }
-            new File(sourcePath, 'header.log').delete();
+            new File(sourceFolder, 'header.log').delete();
         } catch (Exception ex) {
-            throw new RuntimeException("CodeHeaderTask create header.log failed.", ex);
+            throw new RuntimeException("cannot write to: " + sourceFolder.getPath(), ex);
         }
-
-    }
-
-    /**
-     * Check the available disk space required to help us gauge if this operation
-     * has what it needs to do its thing, which is applying the header to each file.
-     */
-    def void checkScratchSpace() {
 
     }
 
     /**
      * The heart and soul of this task, which applies the given header to each
-     * source file under sourcePath.
+     * source file under sourceFolder.
      */
     def void applyCodeHeader() {
-        
-        String headerTemplate = "";
-
+        String headerTemplate  = "";
+        List<String> variables = [];
         if(defaultCodeHeader().equals(headerFile.getPath())) {
-            headerTemplate = Gizmo.readFileFromClasspath("/templates/codeheader/Header.txt");
+            Reader reader = Gizmo.readerFromClasspath("/templates/codeheader/Header.txt");
+            reader.eachLine { line ->
+                parseVariable(line, variables);
+                headerTemplate += line + System.getProperty("line.separator");
+            };
         } else {
-            headerTemplate = headerFile.getText('UTF-8');
+            headerFile.eachLine { line ->
+                parseVariable(line, variables);
+                headerTemplate += line + System.getProperty("line.separator");
+            }
         }
+        
+        variables.eachWithIndex { variable, i ->
+            String defaultValue = NONE;
+            if("user".equalsIgnoreCase(variable)) {
+                defaultValue = System.getProperty("user.name");
+            } else if("projectName".equalsIgnoreCase(variable)) {
+                defaultValue = defaultProjectName(sourceFolder.getPath());
+            } else if("dateTime".equalsIgnoreCase(variable)) {
+                defaultValue = new Date().format("MM-dd-yyyy HH:mm:ss");
+            } else if("packageName".equalsIgnoreCase(variable)) {
+                defaultValue = "auto-complete";
+            }
+            
+            context.setString(variable,
+                input.prompt("\t" + (i+1) + ") " + variable + ": ", defaultValue));
+        };
 
-        def args = [user: context.getString("codeHeader.user")];
-        
-        if(!defaultProjectName().equals(context.getString("codeHeader.projectName"))) {
-            args.put("projectName", context.getString("codeHeader.projectName"));
-        }
-        
-        if(!defaultTags().equals(context.getString("codeHeader.tags"))) {
-            args.put("tags", context.getString("codeHeader.tags"));
-        }
-        
-        if(!defaultProjectOrganization().equals(context.getString("codeHeader.organization"))) {
-            args.put("organization", context.getString("codeHeader.organization"));
-        }
-        
-        if(!defaultLicense().equals(context.getString("codeHeader.license"))) {
-            args.put("license", context.getString("codeHeader.license"));
-        }
-        
-        if(!defaultBody().equals(context.getString("codeHeader.body"))) {
-            args.put("body", context.getString("codeHeader.body"));
-        }
-        
-        if(defaultTagLine().equals(context.getString("codeHeader.tagLine"))) {
-            args.put("tagLine", context.getString("codeHeader.tagLine"));
-        }
-        
-        sourcePath.eachDirRecurse() { dir ->
+        sourceFolder.eachDirRecurse() { dir ->
             dir.eachFileMatch(~/.*\.java$/) { file ->
-                args.put("dateTime", new Date().format("MM-dd-yyyy HH:mm:ss"));
-                args.put("packageName", Gizmo.toPackageName(file));
-                String renderedHeader = Gizmo.render(headerTemplate, args);
+                if(context.getString("packageName") != null) {
+                    context.setString("packageName", Gizmo.toPackageName(file));
+                }
+                String renderedHeader = Gizmo.render(headerTemplate, context.toMap());
                 String content = file.getText("UTF-8");
                 if(hasHeader(content)) {
                     content = removeHeader(content);
