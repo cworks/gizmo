@@ -1,6 +1,6 @@
 package github.cworks.gizmo.tasks
 
-import github.cworks.gizmo.Gizmo
+import github.cworks.gizmo.GizmoApp
 
 /**
  * Do gradle stuff
@@ -77,7 +77,7 @@ class GradlizeTask extends GizmoTask {
      * @param gizmo
      * @param project
      */
-    GradlizeTask(final Gizmo gizmo, final JavaProjectTask project) {
+    GradlizeTask(final GizmoApp gizmo, final JavaProjectTask project) {
         super(gizmo);
         this.project = project;
     }

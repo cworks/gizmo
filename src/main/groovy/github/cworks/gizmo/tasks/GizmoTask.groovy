@@ -6,13 +6,13 @@
  */
 package github.cworks.gizmo.tasks
 
-import github.cworks.gizmo.Gizmo
+import github.cworks.gizmo.GizmoApp
 
 abstract class GizmoTask {
 
-    protected Gizmo gizmo;
+    protected GizmoApp gizmo;
 
-    GizmoTask(final Gizmo gizmo) {
+    GizmoTask(final GizmoApp gizmo) {
         this.gizmo = gizmo;
     }
 

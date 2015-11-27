@@ -16,3 +16,4 @@ test-results
 test-tmp
 *.class
 mods
+.libs

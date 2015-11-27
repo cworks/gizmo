@@ -2,6 +2,11 @@ package github.cworks.gizmo
 
 class Terminal {
 
+    /**
+     * We use the GroovyShell to run groovy scripts
+     */
+    def static final GroovyShell groovyShell = new GroovyShell();
+
     def String prompt;
     def String helloMessage;
     def String byeMessage;
@@ -56,6 +61,28 @@ class Terminal {
     def log(String message) {
         String line = "$prompt $message";
         print("$line ");
+    }
+
+    /**
+     * Run a groovy script
+     * @param script
+     */
+    def runScript(File groovyScript) {
+        runScript(groovyScript, null);
+    }
+
+    /**
+     * Run a groovy script with arguments
+     * @param script
+     * @param args
+     */
+    def runScript(File groovyScript, String[] args) {
+        Script script = groovyShell.parse(groovyScript);
+        if(args != null) {
+            script.run(groovyScript, args);
+        } else {
+            script.run(groovyScript);
+        }
     }
 
     /**

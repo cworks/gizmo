@@ -1,6 +1,6 @@
 package github.cworks.gizmo.tasks
 
-import github.cworks.gizmo.Gizmo
+import github.cworks.gizmo.GizmoApp;
 
 class MavenizeTask extends GizmoTask {
 
@@ -11,7 +11,7 @@ class MavenizeTask extends GizmoTask {
      * @param gizmo
      * @param project
      */
-    MavenizeTask(final Gizmo gizmo, final JavaProjectTask project) {
+    MavenizeTask(final GizmoApp gizmo, final JavaProjectTask project) {
         super(gizmo);
         this.project = project;
     }

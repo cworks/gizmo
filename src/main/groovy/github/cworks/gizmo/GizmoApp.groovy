@@ -1,13 +1,14 @@
 package github.cworks.gizmo
-
 import github.cworks.gizmo.tasks.GizmoProject
+import github.cworks.reflect.Reflect
+import github.cworks.reflect.ReflectException
 import groovy.text.GStringTemplateEngine
 import net.cworks.json.JsonObject
 
-class Gizmo {
+class GizmoApp {
 
     /**
-     * Gizmo home directory
+     * GizmoApp home directory
      */
     def File gizmoHome = null;
 
@@ -19,46 +20,57 @@ class Gizmo {
     /**
      * Terminal for prompting and processing commands
      */
-    def Terminal terminal = new Terminal("(gizmo)", "Welcome to Gizmo", "Sinaria boss");;
+    def Terminal terminal = new Terminal("(gizmo)", "Welcome to Gizmo", "Sinaria boss");
+
+    /**
+     * List of Gizmos
+     */
+    def gizmos = [];
 
     /**
      * You got to start it up...with a gizmo home directory as one and only argument
      * @param args
      */
     public static void main(String[] args) {
-        Gizmo gizmo = new Gizmo();
-        gizmo.wizard();
+        GizmoApp gizmoApp = new GizmoApp();
+        //gizmoApp.gizmos.each { gizmo ->
+        //    terminal.log("gizmo: " + gizmo.toString());
+
+
+            //gizmo.init();
+        //}
+
+        //gizmoApp.run();
     }
 
-    private Gizmo() {
+    private GizmoApp() {
         this.context = new JsonObject();
-    }
+        //JsonArray array = new JsonArray();
+        //def instance = this.getClass().getClassLoader()
+        //    .loadClass( 'Item', true, false )?.newInstance()
 
-    /**
-     * Private creation, needs a gizmo home directory
-     * @param gizmoHome
-     */
-    private Gizmo(File gizmoHome) {
-        this.gizmoHome = gizmoHome;
-        this.context = new JsonObject();
-    }
+        terminal.runScript(new File("src/main/groovy/github/cworks/gizmo/TestScript.groovy"), "Corbett");
 
-    /**
-     * Creation method
-     * @param gizmoHome
-     * @return
-     */
-    static Gizmo newGizmo(String gizmoHome) {
-        File dir = new File(gizmoHome);
-        if(!dir.exists()) {
-            throw new RuntimeException("Can't have a Gizmo without a Gizmo Home.");
+        URL url = this.getClass().getClassLoader().getResource("github/cworks/gizmo/tasks");
+        File root = new File(url.getPath());
+        for(File file : root.listFiles()) {
+            if(file.isFile()) {
+                String taskName = file.getName().minus(".class");
+                Object o;
+                try {
+                    o = Reflect.on("github.cworks.gizmo.tasks." + taskName).create(this).get();
+
+                    Terminal.println("o=" + o.toString());
+                } catch(ReflectException ex) {
+                    // eat it
+                }
+            }
         }
-        Gizmo gizmo = new Gizmo(dir);
-        return gizmo;
+
     }
 
     static copyFileFromClasspath(String source, String target) {
-        BufferedReader reader = Gizmo.class.getResource(source).newReader();
+        BufferedReader reader = GizmoApp.class.getResource(source).newReader();
         if(!reader) {
             throw new RuntimeException("Woopsie could not read file from classpath: $source");
         }
@@ -77,7 +89,7 @@ class Gizmo {
     }
 
     static copyBinaryFileFromClasspath(String source, String target) {
-        InputStream input = Gizmo.class.getResource(source).newInputStream();
+        InputStream input = GizmoApp.class.getResource(source).newInputStream();
         if(!input) {
             throw new RuntimeException("Woopsie could not obtain input stream classpath: $source");
         }
@@ -132,7 +144,7 @@ class Gizmo {
 
     static renderFromClasspath(String template, String target, Map args = [:]) {
 
-        BufferedReader reader = Gizmo.class.getResource(template).newReader();
+        BufferedReader reader = GizmoApp.class.getResource(template).newReader();
         if(!reader) {
             throw new RuntimeException("Woopsie could not find template from classpath: $template");
         }

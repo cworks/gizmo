@@ -6,13 +6,13 @@
  */
 package github.cworks.gizmo.tasks
 
-import github.cworks.gizmo.Gizmo
+import github.cworks.gizmo.GizmoApp
 
 class GizmoProject {
 
-    private Gizmo gizmo;
+    private GizmoApp gizmo;
 
-    private GizmoProject(Gizmo gizmo) {
+    private GizmoProject(GizmoApp gizmo) {
         this.gizmo = gizmo;
     }
 
@@ -40,7 +40,7 @@ class GizmoProject {
         return "github.cworks.app";
     }
 
-    static GizmoProject newProject(Gizmo gizmo) {
+    static GizmoProject newProject(GizmoApp gizmo) {
 
         return new GizmoProject(gizmo);
     }

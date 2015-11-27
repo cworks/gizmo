@@ -8,7 +8,7 @@
  */
 package github.cworks.gizmo.tasks
 
-import github.cworks.gizmo.Gizmo;
+import github.cworks.gizmo.GizmoApp;
 
 /**
  * Contains all the details for creating a basic Java project
@@ -36,7 +36,7 @@ class JavaProjectTask extends GizmoTask {
      * @param parentPath
      * @param projectName
      */
-    JavaProjectTask(final Gizmo gizmo) {
+    JavaProjectTask(final GizmoApp gizmo) {
         super(gizmo);
 
         this.parentPath = new File(gizmo.context().getString("path"));
