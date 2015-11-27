@@ -1,4 +1,5 @@
 package github.cworks.gizmo
+
 import github.cworks.gizmo.tasks.GizmoProject
 import github.cworks.reflect.Reflect
 import github.cworks.reflect.ReflectException
@@ -6,6 +7,17 @@ import groovy.text.GStringTemplateEngine
 import net.cworks.json.JsonObject
 
 class GizmoApp {
+
+    def static printHelp = { ShellInput input, ShellOutput output ->
+        output.println("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+        output.println("| g-i-z-m-o version 1.0.0                                     |");
+        output.println("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+        output.println("| -help                 | this menu                           |");
+        output.println("| -quit                 | bye-bye                             |");
+        output.println("| -wizard               | new project wizard                  |");
+        output.println("| -codeheader           | apply code header to sources        |");
+        output.println("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+    };
 
     /**
      * GizmoApp home directory
@@ -35,6 +47,26 @@ class GizmoApp {
         GizmoApp gizmoApp = new GizmoApp();
         //gizmoApp.gizmos.each { gizmo ->
         //    terminal.log("gizmo: " + gizmo.toString());
+
+        final Gizmo gizmo = new Gizmo();
+
+        final Shell shell = new Shell("(gizmo)", "Welcome, -help for menu", "Sinaria");
+        shell.splash(printHelp)
+            .quit("-quit", { ShellOutput output ->
+                    output.println("-quit command closure called.");
+                })
+            .help("-help", printHelp)
+            .command("-wizard", { ShellInput input, ShellOutput output ->
+                    gizmo.wizard(input, output);
+                })
+            .command("-codeheader", { ShellInput input, ShellOutput output ->
+                    gizmo.codeHeader(input, output);
+                })
+            .errorHandler({ Exception ex ->
+                    ex.printStackTrace();
+                })
+            .start();
+    }
 
 
             //gizmo.init();
@@ -67,6 +99,35 @@ class GizmoApp {
             }
         }
 
+    }
+
+    /**
+     * Return the package of a java source file
+     * @param javaFile
+     * @return
+     */
+    static String toPackageName(File javaFile) {
+        String packageName;
+        if(isWin()) {
+            packageName = javaFile.getParentFile().getPath().replace("\\", ".");
+        } else {
+            packageName = javaFile.getParentFile().getPath().replace("/", ".");
+        }
+        
+        return packageName.split("(src.)(.*)(.java.)")[1];
+    }
+    
+    static String readFileFromClasspath(String source) {
+        return readerFromClasspath(source).getText();
+    }
+    
+    static Reader readerFromClasspath(String source) {
+        BufferedReader reader = Gizmo.class.getResource(source).newReader();
+        if(!reader) {
+            throw new RuntimeException("Woopsie could not read file from classpath: $source");
+        }
+
+        return reader;
     }
 
     static copyFileFromClasspath(String source, String target) {
@@ -187,6 +248,14 @@ class GizmoApp {
 
         GizmoProject.newProject(this).create();
 
+    /**
+     * Run and apply the code header to all source files specified
+     * @param input
+     * @param output
+     */
+    def codeHeader(ShellInput input, ShellOutput output) {
+        
+        new CodeHeaderTask(getContext(), input, output).gizIt();
     }
 
     def getGizmoHome() {

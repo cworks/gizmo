@@ -1,6 +1,6 @@
 package github.cworks.gizmo.tasks
 
-import github.cworks.gizmo.GizmoApp
+import github.cworks.gizmo.Gizmo
 
 /**
  * Do gradle stuff
